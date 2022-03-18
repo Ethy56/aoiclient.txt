@@ -43,7 +43,7 @@ nameFrame.pack(side="top")
 nameLBL = Label(nameFrame, text="Name:", font=font)
 nameLBL.pack(side="top")
 
-nameText = Text(nameFrame, height=1, font=font)
+nameText = Text(nameFrame, undo=True, height=1, font=font)
 nameText.pack(side="bottom")
 
 codeFrame = Frame(win, height=100, width=600)
@@ -52,7 +52,7 @@ codeFrame.pack(side="top")
 codeLBL = Label(codeFrame, text="Code:", font=font)
 codeLBL.pack(side="top")
 
-codeText = Text(codeFrame, height=10, font=font)
+codeText = Text(codeFrame, undo=True, height=10, font=font)
 codeText.pack(side="bottom")
 
 btnFrame = Frame(win, height=100, width=600)
@@ -67,7 +67,7 @@ def clearValues():
 		codeText.delete(1.0, END)
 
 def openThis():
-	global codeText, nameText, file, path, win
+	global codeText, nameText, file, filename, path, win
 	from tkinter import filedialog, Tk
 	win.withdraw()
 	check = filedialog.askopenfilename(title="aoiclient.txt Open Text Command").split("/")
@@ -76,36 +76,46 @@ def openThis():
 		return
 	win.deiconify()
 	lines = check
-	if nameText.get(1.0, END) != "":
+	if nameText.get(1.0, END).replace("\n","") != "":
 		nameText.delete(1.0, END)
-	nameText.insert(END, file.split(".")[0])
-	if file:
+	if file and not file.closed:
 		file.close()
-	file = open(os.path.join(path, file))
+	file = open(os.path.join(path, check).replace("\\","/"))
+	nameText.insert(END, check.split(".")[0])
 	if codeText.get(1.0, END) != "":
 		codeText.delete(1.0, END)
 	codeText.insert(END, "\n".join(file.readlines()))
+	file.close()
+	filename = check
 	
 def saveThis():
-	global codeText, nameText, path, file, filename
-	if filename != nameText.get(1.0, END):
-		os.rename(os.path.join(path, filename))
-	line = str.encode(codeText.get(1.0, END))
+	global codeText, nameText, path, filename
+	filepath = os.path.join(path,filename).replace("\\","/")
+	toSend = codeText.get(1.0, END).split("\n")
+	def myFilter(variable):
+	    return variable != ""
+	toSend = list(filter(myFilter, toSend))
+	line = str.encode("\n".join(toSend))
 	tru = open(filepath, "w+")
 	tru.truncate(0)
 	tru.close()
 	fd = os.open(filepath, os.O_RDWR)
 	numBytes = os.write(fd, line)
 	os.close(fd)
-	if file and nameText.get(1.0, END) != file:
-		os.rename(filepath, path+nameText.get(1.0,END)+".txt")
-	file = nameText.get(1.0,END)
+	if filename != nameText.get(1.0, END).replace("\n","")+".txt":
+		dst = path.replace("\\","/")+"/"+nameText.get(1.0,END).replace("\n","")+".txt"
+		os.rename(filepath, dst)
 	clearValues()
 
 saveButton = Button(btnFrame, text="Save", command=saveThis)
 saveButton.pack(side="left")
 openButton = Button(btnFrame, text="Open", command=openThis)
 openButton.pack(side="left")
+clearButton = Button(btnFrame, text="Clear", command=clearValues)
+clearButton.pack(side="left")
 
 win.mainloop()
-# open, save, delete, new
+
+# TODO:
+# Delete button?
+# New button?
