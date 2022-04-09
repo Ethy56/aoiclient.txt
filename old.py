@@ -10,6 +10,7 @@ def getFiles(path):
 	filenames = next(walk(path), (None, None, []))[2]
 	return filenames or []
 
+print("not reccomended to use this version")
 print("Launching folder dialog...")
 path = getPath()
 print("Got " + path)
